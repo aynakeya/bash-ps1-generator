@@ -12,6 +12,7 @@ export interface PS1Style {
   blink?: boolean
   reverse?: boolean
   strikethrough?: boolean
+  overline?: boolean
   foreground?: PS1Color
   background?: PS1Color
 }

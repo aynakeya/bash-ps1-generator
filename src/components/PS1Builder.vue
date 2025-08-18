@@ -198,6 +198,56 @@
                   />
                   <span class="label-text">Underline</span>
                 </label>
+                
+                <label class="label cursor-pointer justify-start gap-2">
+                  <input
+                    type="checkbox"
+                    class="checkbox checkbox-sm"
+                    v-model="elementStyle.dim"
+                    @change="updateElementStyle"
+                  />
+                  <span class="label-text">Dim</span>
+                </label>
+                
+                <label class="label cursor-pointer justify-start gap-2">
+                  <input
+                    type="checkbox"
+                    class="checkbox checkbox-sm"
+                    v-model="elementStyle.blink"
+                    @change="updateElementStyle"
+                  />
+                  <span class="label-text">Blink</span>
+                </label>
+                
+                <label class="label cursor-pointer justify-start gap-2">
+                  <input
+                    type="checkbox"
+                    class="checkbox checkbox-sm"
+                    v-model="elementStyle.reverse"
+                    @change="updateElementStyle"
+                  />
+                  <span class="label-text">Reverse</span>
+                </label>
+                
+                <label class="label cursor-pointer justify-start gap-2">
+                  <input
+                    type="checkbox"
+                    class="checkbox checkbox-sm"
+                    v-model="elementStyle.strikethrough"
+                    @change="updateElementStyle"
+                  />
+                  <span class="label-text">Strikethrough</span>
+                </label>
+                
+                <label class="label cursor-pointer justify-start gap-2">
+                  <input
+                    type="checkbox"
+                    class="checkbox checkbox-sm"
+                    v-model="elementStyle.overline"
+                    @change="updateElementStyle"
+                  />
+                  <span class="label-text">Overline</span>
+                </label>
               </div>
             </div>
 
@@ -283,11 +333,13 @@ const importExportText = ref('')
 // Element style properties for the selected element
 const elementStyle = reactive({
   bold: false,
+  dim: false,
   italic: false,
   underline: false,
   blink: false,
   reverse: false,
-  strikethrough: false
+  strikethrough: false,
+  overline: false
 })
 
 const foregroundColor = ref('#ffffff')
@@ -320,6 +372,7 @@ const previewHTML = computed(() => {
       if (element.style.reverse) styles.push('filter: invert(1)')
       if (element.style.dim) styles.push('opacity: 0.7')
       if (element.style.strikethrough) styles.push('text-decoration: line-through')
+      if (element.style.overline) styles.push('text-decoration: overline')
       
       // Foreground color
       if (element.style.foreground) {
@@ -411,11 +464,13 @@ function selectElement(element: PS1Element) {
   // Update style controls
   if (element.style) {
     elementStyle.bold = element.style.bold || false
+    elementStyle.dim = element.style.dim || false
     elementStyle.italic = element.style.italic || false
     elementStyle.underline = element.style.underline || false
     elementStyle.blink = element.style.blink || false
     elementStyle.reverse = element.style.reverse || false
     elementStyle.strikethrough = element.style.strikethrough || false
+    elementStyle.overline = element.style.overline || false
     
     // Handle foreground color
     if (element.style.foreground) {
@@ -445,11 +500,13 @@ function selectElement(element: PS1Element) {
     // Reset style controls
     Object.assign(elementStyle, {
       bold: false,
+      dim: false,
       italic: false,
       underline: false,
       blink: false,
       reverse: false,
-      strikethrough: false
+      strikethrough: false,
+      overline: false
     })
     foregroundColor.value = '#ffffff'
     backgroundColor.value = '#000000'
@@ -663,7 +720,7 @@ function importPS1() {
   if (!importExportText.value.trim()) return
   
   try {
-    const imported = parsePS1(importExportText.value.trim())
+    const imported = parsePS1(importExportText.value)
     // Clear existing elements first
     builderState.elements.length = 0
     // Clear selected element

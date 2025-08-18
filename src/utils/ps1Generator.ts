@@ -37,62 +37,45 @@ export function generateBackgroundColorCode(color: PS1Color): string {
 }
 
 export function generateStyleCodes(style: PS1Style): { start: string; end: string } {
-  let startCodes: string[] = []
-  let endCodes: string[] = []
+  let ansiCodes: number[] = []
+  
+  // Collect all ANSI style codes
+  if (style.bold) ansiCodes.push(1)
+  if (style.dim) ansiCodes.push(2) 
+  if (style.italic) ansiCodes.push(3)
+  if (style.underline) ansiCodes.push(4)
+  if (style.blink) ansiCodes.push(5)
+  if (style.reverse) ansiCodes.push(7)
+  if (style.strikethrough) ansiCodes.push(9)
+  if (style.overline) ansiCodes.push(53)
 
-  // Text styles
-  if (style.bold) {
-    startCodes.push('\\[$(tput bold)\\]')
-    endCodes.push('\\[$(tput sgr0)\\]')
-  }
-  if (style.dim) {
-    startCodes.push('\\[$(tput dim)\\]')
-    endCodes.push('\\[$(tput sgr0)\\]')
-  }
-  if (style.italic) {
-    startCodes.push('\\[\\033[3m\\]')
-    endCodes.push('\\[\\033[23m\\]')
-  }
-  if (style.underline) {
-    startCodes.push('\\[$(tput smul)\\]')
-    endCodes.push('\\[$(tput rmul)\\]')
-  }
-  if (style.blink) {
-    startCodes.push('\\[$(tput blink)\\]')
-    endCodes.push('\\[$(tput sgr0)\\]')
-  }
-  if (style.reverse) {
-    startCodes.push('\\[$(tput rev)\\]')
-    endCodes.push('\\[$(tput sgr0)\\]')
-  }
-  if (style.strikethrough) {
-    startCodes.push('\\[\\033[9m\\]')
-    endCodes.push('\\[\\033[29m\\]')
+  // Add color codes
+  if (style.foreground?.type === 'ansi') {
+    ansiCodes.push(38, 5, style.foreground.value as number)
+  } else if (style.foreground?.type === 'hex') {
+    // Convert hex to RGB
+    const hex = style.foreground.value.toString().replace('#', '')
+    const r = parseInt(hex.substr(0, 2), 16)
+    const g = parseInt(hex.substr(2, 2), 16)
+    const b = parseInt(hex.substr(4, 2), 16)
+    ansiCodes.push(38, 2, r, g, b)
   }
 
-  // Colors
-  if (style.foreground) {
-    if (style.foreground.type === 'ansi') {
-      startCodes.push(`\\[\\033[38;5;${style.foreground.value}m\\]`)
-    } else {
-      startCodes.push(`\\[${generateColorCode(style.foreground)}\\]`)
-    }
-    endCodes.push('\\[$(tput sgr0)\\]')
+  if (style.background?.type === 'ansi') {
+    ansiCodes.push(48, 5, style.background.value as number)
+  } else if (style.background?.type === 'hex') {
+    // Convert hex to RGB
+    const hex = style.background.value.toString().replace('#', '')
+    const r = parseInt(hex.substr(0, 2), 16)
+    const g = parseInt(hex.substr(2, 2), 16)
+    const b = parseInt(hex.substr(4, 2), 16)
+    ansiCodes.push(48, 2, r, g, b)
   }
 
-  if (style.background) {
-    if (style.background.type === 'ansi') {
-      startCodes.push(`\\[\\033[48;5;${style.background.value}m\\]`)
-    } else {
-      startCodes.push(`\\[${generateBackgroundColorCode(style.background)}\\]`)
-    }
-    endCodes.push('\\[$(tput sgr0)\\]')
-  }
+  const start = ansiCodes.length > 0 ? `\\[\\e[${ansiCodes.join(';')}m\\]` : ''
+  const end = ansiCodes.length > 0 ? '\\[\\e[0m\\]' : ''
 
-  return {
-    start: startCodes.join(''),
-    end: endCodes.reverse().join('')
-  }
+  return { start, end }
 }
 
 export function generateElementCode(element: PS1Element): string {
@@ -135,6 +118,9 @@ export function generateElementCode(element: PS1Element): string {
       break
     case 'set_window_title':
       code += `\\[\\033]0;${element.customText || 'Terminal'}\\007\\]`
+      break
+    case 'prompt_sign':
+      code += '\\$'
       break
     default:
       code += element.value
@@ -214,7 +200,7 @@ export function parsePS1(ps1String: string): PS1BuilderState {
     }
 
     // Look for text content (including spaces)
-    const textMatch = ps1String.substring(position).match(/^([^\\$]+|\\[^[udhtTAwnWD@!#$jlsvV]|[^\\]+)/)
+    const textMatch = ps1String.substring(position).match(/^([^\\]+)/)
     
     if (textMatch) {
       const textContent = textMatch[1]
@@ -255,7 +241,7 @@ export function parsePS1(ps1String: string): PS1BuilderState {
 function parseStyleCode(styleCode: string, currentStyle: PS1Style): PS1Style {
   const newStyle = { ...currentStyle }
 
-  // Parse tput commands
+  // Parse tput commands (legacy support)
   if (styleCode.includes('tput')) {
     if (styleCode.includes('bold')) {
       newStyle.bold = true
@@ -273,69 +259,103 @@ function parseStyleCode(styleCode: string, currentStyle: PS1Style): PS1Style {
     } else if (styleCode.includes('rev')) {
       newStyle.reverse = true
     }
+    return newStyle
   }
 
-  // Parse ANSI color codes
-  const ansiMatch = styleCode.match(/\\033\[38;5;(\d+)m|\\e\[38;5;(\d+)m/)
-  if (ansiMatch) {
-    const colorValue = parseInt(ansiMatch[1] || ansiMatch[2])
-    newStyle.foreground = {
-      type: 'ansi',
-      value: colorValue
-    }
-  }
-
-  const ansiBackgroundMatch = styleCode.match(/\\033\[48;5;(\d+)m|\\e\[48;5;(\d+)m/)
-  if (ansiBackgroundMatch) {
-    const colorValue = parseInt(ansiBackgroundMatch[1] || ansiBackgroundMatch[2])
-    newStyle.background = {
-      type: 'ansi',
-      value: colorValue
-    }
-  }
-
-  // Parse basic ANSI codes
-  const basicAnsiMatch = styleCode.match(/\\033\[(\d+)m|\\e\[(\d+)m/)
-  if (basicAnsiMatch) {
-    const code = parseInt(basicAnsiMatch[1] || basicAnsiMatch[2])
-    switch (code) {
-      case 0:
-        return {} // Reset
-      case 1:
-        newStyle.bold = true
-        break
-      case 2:
-        newStyle.dim = true
-        break
-      case 3:
-        newStyle.italic = true
-        break
-      case 4:
-        newStyle.underline = true
-        break
-      case 5:
-        newStyle.blink = true
-        break
-      case 7:
-        newStyle.reverse = true
-        break
-      case 9:
-        newStyle.strikethrough = true
-        break
-      // Basic colors (30-37 foreground, 40-47 background)
-      case 30: case 31: case 32: case 33: case 34: case 35: case 36: case 37:
-        newStyle.foreground = { type: 'ansi', value: code - 30 }
-        break
-      case 40: case 41: case 42: case 43: case 44: case 45: case 46: case 47:
-        newStyle.background = { type: 'ansi', value: code - 40 }
-        break
-      // Bright colors (90-97 foreground, 100-107 background)
-      case 90: case 91: case 92: case 93: case 94: case 95: case 96: case 97:
-        newStyle.foreground = { type: 'ansi', value: code - 82, bright: true }
-        break
-      case 100: case 101: case 102: case 103: case 104: case 105: case 106: case 107:
-        newStyle.background = { type: 'ansi', value: code - 92, bright: true }
-        break
+  // Parse combined ANSI codes (e.g., \[\e[1;2;3;38;5;213m\])
+  const ansiCombinedMatch = styleCode.match(/\\(?:033\[|e\[)([0-9;]+)m/)
+  if (ansiCombinedMatch) {
+    const codes = ansiCombinedMatch[1].split(';').map(code => parseInt(code))
+    
+    let i = 0
+    while (i < codes.length) {
+      const code = codes[i]
+      
+      switch (code) {
+        case 0:
+          return {} // Reset all styles
+        case 1:
+          newStyle.bold = true
+          break
+        case 2:
+          newStyle.dim = true
+          break
+        case 3:
+          newStyle.italic = true
+          break
+        case 4:
+          newStyle.underline = true
+          break
+        case 5:
+          newStyle.blink = true
+          break
+        case 7:
+          newStyle.reverse = true
+          break
+        case 9:
+          newStyle.strikethrough = true
+          break
+        case 53:
+          newStyle.overline = true
+          break
+        case 38:
+          // Foreground color
+          if (i + 1 < codes.length && codes[i + 1] === 5 && i + 2 < codes.length) {
+            // 256-color: 38;5;n
+            newStyle.foreground = {
+              type: 'ansi',
+              value: codes[i + 2]
+            }
+            i += 2 // Skip the next two codes (5 and color value)
+          } else if (i + 1 < codes.length && codes[i + 1] === 2 && i + 4 < codes.length) {
+            // RGB color: 38;2;r;g;b
+            const r = codes[i + 2]
+            const g = codes[i + 3]
+            const b = codes[i + 4]
+            newStyle.foreground = {
+              type: 'hex',
+              value: `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`
+            }
+            i += 4 // Skip the next four codes (2, r, g, b)
+          }
+          break
+        case 48:
+          // Background color
+          if (i + 1 < codes.length && codes[i + 1] === 5 && i + 2 < codes.length) {
+            // 256-color: 48;5;n
+            newStyle.background = {
+              type: 'ansi',
+              value: codes[i + 2]
+            }
+            i += 2 // Skip the next two codes (5 and color value)
+          } else if (i + 1 < codes.length && codes[i + 1] === 2 && i + 4 < codes.length) {
+            // RGB color: 48;2;r;g;b
+            const r = codes[i + 2]
+            const g = codes[i + 3]
+            const b = codes[i + 4]
+            newStyle.background = {
+              type: 'hex',
+              value: `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`
+            }
+            i += 4 // Skip the next four codes (2, r, g, b)
+          }
+          break
+        // Basic colors (30-37 foreground, 40-47 background)
+        case 30: case 31: case 32: case 33: case 34: case 35: case 36: case 37:
+          newStyle.foreground = { type: 'ansi', value: code - 30 }
+          break
+        case 40: case 41: case 42: case 43: case 44: case 45: case 46: case 47:
+          newStyle.background = { type: 'ansi', value: code - 40 }
+          break
+        // Bright colors (90-97 foreground, 100-107 background)
+        case 90: case 91: case 92: case 93: case 94: case 95: case 96: case 97:
+          newStyle.foreground = { type: 'ansi', value: code - 82, bright: true }
+          break
+        case 100: case 101: case 102: case 103: case 104: case 105: case 106: case 107:
+          newStyle.background = { type: 'ansi', value: code - 92, bright: true }
+          break
+      }
+      i++
     }
   }
 
