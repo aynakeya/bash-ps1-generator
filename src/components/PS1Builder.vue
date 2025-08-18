@@ -81,7 +81,7 @@
               <h4 class="text-md font-semibold mb-2">Generated PS1:</h4>
               <div class="flex gap-2">
                 <div class="mockup-code flex-1 text-xs">
-                  <pre class="break-all whitespace-pre-wrap"><code>{{ generatedPS1 }}</code></pre>
+                  <pre data-prefix="$"><code class="text-xs font-mono leading-relaxed">{{ generatedPS1 }}</code></pre>
                 </div>
                 <button 
                   @click="copyToClipboard" 

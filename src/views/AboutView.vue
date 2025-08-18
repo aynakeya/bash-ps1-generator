@@ -161,8 +161,8 @@
             
             <div class="mt-4">
               <h4 class="font-semibold mb-2">Example:</h4>
-              <div class="mockup-code text-xs">
-                <pre><code>export PS1="[\[$(tput sgr0)\]\[$(tput bold)\]\[\033[38;5;213m\]\u\[$(tput sgr0)\] \[$(tput sgr0)\]\[$(tput bold)\]\[\033[38;5;213m\]@\[$(tput sgr0)\] \[$(tput sgr0)\]\[\033[38;5;213m\]\h\[$(tput sgr0)\]]:\[$(tput sgr0)\]\[$(tput bold)\]\[\033[38;5;74m\]\w\[$(tput sgr0)\]\n\[$(tput bold)\]\t\[$(tput sgr0)\] \[$(tput bold)\]\\$\[$(tput sgr0)\] \[$(tput sgr0)\]"</code></pre>
+              <div class="mockup-code text-xs overflow-x-auto">
+                <pre class="whitespace-pre-wrap break-all"><code>export PS1="[\[$(tput sgr0)\]\[$(tput bold)\]\[\033[38;5;213m\]\u\[$(tput sgr0)\] \[$(tput sgr0)\]\[$(tput bold)\]\[\033[38;5;213m\]@\[$(tput sgr0)\] \[$(tput sgr0)\]\[\033[38;5;213m\]\h\[$(tput sgr0)\]]:\[$(tput sgr0)\]\[$(tput bold)\]\[\033[38;5;74m\]\w\[$(tput sgr0)\]\n\[$(tput bold)\]\t\[$(tput sgr0)\] \[$(tput bold)\]\\$\[$(tput sgr0)\] \[$(tput sgr0)\]"</code></pre>
               </div>
             </div>
           </div>
