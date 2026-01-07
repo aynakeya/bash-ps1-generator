@@ -11,7 +11,10 @@
     "build": "run-p type-check \"build-only {@}\" --",
     "preview": "vite preview",
     "build-only": "vite build",
-    "type-check": "vue-tsc --build"
+    "build:pages": "vite build --base=/bashrc-ps1-generator/",
+    "type-check": "vue-tsc --build",
+    "preview": "vite preview",
+    "preview:pages": "vite preview --base=/bashrc-ps1-generator/"
   },
   "dependencies": {
     "@tailwindcss/vite": "^4.1.12",
