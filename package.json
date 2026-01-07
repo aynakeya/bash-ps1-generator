@@ -9,7 +9,6 @@
   "scripts": {
     "dev": "vite",
     "build": "run-p type-check \"build-only {@}\" --",
-    "preview": "vite preview",
     "build-only": "vite build",
     "build:pages": "vite build --base=/bashrc-ps1-generator/",
     "type-check": "vue-tsc --build",
